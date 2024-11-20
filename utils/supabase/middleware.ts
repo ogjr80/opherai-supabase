@@ -2,8 +2,6 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
 export const updateSession = async (request: NextRequest) => {
-  // This `try/catch` block is only here for the interactive tutorial.
-  // Feel free to remove once you have Supabase connected.
   try {
     // Create an unmodified response
     let response = NextResponse.next({
@@ -37,15 +35,43 @@ export const updateSession = async (request: NextRequest) => {
 
     // This will refresh session if expired - required for Server Components
     // https://supabase.com/docs/guides/auth/server-side/nextjs
-    const user = await supabase.auth.getUser();
+    const { data: { user }, error } = await supabase.auth.getUser();
 
-    // protected routes
-    if (request.nextUrl.pathname.startsWith("/protected") && user.error) {
-      return NextResponse.redirect(new URL("/sign-in", request.url));
+    // Public routes
+    if (['/sign-in', '/sign-up', '/'].includes(request.nextUrl.pathname)) {
+      if (user && !error) {
+        const role = user.user_metadata.role;
+        const onboarded = user.user_metadata.onboarded;
+        
+        if (!onboarded) {
+          return NextResponse.redirect(new URL(`/onboarding/${role}`, request.url));
+        }
+        return NextResponse.redirect(new URL(`/dashboard/${role}`, request.url));
+      }
+      return response;
     }
 
-    if (request.nextUrl.pathname === "/" && !user.error) {
-      return NextResponse.redirect(new URL("/protected", request.url));
+    // Protected routes
+    if (!user || error) {
+      return NextResponse.redirect(new URL('/sign-in', request.url));
+    }
+
+    // Onboarding routes
+    if (request.nextUrl.pathname.startsWith('/onboarding')) {
+      const role = user.user_metadata.role;
+      if (user.user_metadata.onboarded) {
+        return NextResponse.redirect(new URL(`/dashboard/${role}`, request.url));
+      }
+    }
+
+    // Dashboard routes
+    if (request.nextUrl.pathname.startsWith('/dashboard')) {
+      const role = user.user_metadata.role;
+      const requestedRole = request.nextUrl.pathname.split('/')[2];
+      
+      if (role !== requestedRole) {
+        return NextResponse.redirect(new URL(`/dashboard/${role}`, request.url));
+      }
     }
 
     return response;

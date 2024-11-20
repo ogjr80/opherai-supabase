@@ -11,6 +11,7 @@ interface TeamSetupFormProps {
     experience: string;
   }[];
   updateData: (field: string, value: any[]) => void;
+  fieldErrors?: Record<string, string>;
 }
 
 const roles = [
@@ -42,7 +43,7 @@ const experienceLevels = [
   '10+ years'
 ];
 
-const TeamSetupForm = ({ data, updateData }: TeamSetupFormProps) => {
+const TeamSetupForm = ({ data, updateData, fieldErrors }: TeamSetupFormProps) => {
   const addTeamMember = () => {
     updateData('team', [
       ...data,
@@ -112,9 +113,13 @@ const TeamSetupForm = ({ data, updateData }: TeamSetupFormProps) => {
                     type="text"
                     value={member.name}
                     onChange={(e) => updateTeamMember(index, 'name', e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                    className={`block w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500
+                      ${fieldErrors?.[`${index}.name`] ? 'border-red-300' : 'border-gray-300'}`}
                     placeholder="Full Name"
                   />
+                  {fieldErrors?.[`${index}.name`] && (
+                    <p className="mt-1 text-sm text-red-500">{fieldErrors[`${index}.name`]}</p>
+                  )}
                 </div>
               </div>
 

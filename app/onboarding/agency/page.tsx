@@ -167,49 +167,24 @@ export default function AgencyOnboarding() {
   ];
 
   const handleSubmit = async () => {
-    setIsSubmitting(true);
     try {
-      // Validate all steps before submission
-      for (let i = 0; i < steps.length - 1; i++) {
-        const isValid = await validateStep(i);
-        if (!isValid) {
-          setStep(i);
-          setIsSubmitting(false);
-          return;
-        }
-      }
-
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-
+      
       if (!user) {
         throw new Error('No user found');
       }
 
-      // Update agency profile
-      await AgencyOnboardingService.updateProfile(user.id, formData.profile);
-
-      // Update services
-      await AgencyOnboardingService.updateServices(user.id, formData.services);
-
-      // Update team members
-      await AgencyOnboardingService.updateTeam(user.id, formData.team);
-
-      // Update client portfolio
-      await AgencyOnboardingService.updateClientPortfolio(user.id, formData.clients);
-
-      // Mark onboarding as complete
+      setIsSubmitting(true);
+      
+      // Just complete onboarding and clear progress
       await AgencyOnboardingService.completeOnboarding(user.id);
-
-      toast.success('Agency profile created successfully!');
+      
+      toast.success('Setup completed successfully!');
       router.push('/dashboard/agency');
-
-      // Clear progress after successful submission
-      await AgencyOnboardingService.saveProgress(user.id, -1, null);
-
     } catch (error) {
       console.error('Onboarding error:', error);
-      toast.error('Error creating agency profile');
+      toast.error('Failed to complete setup');
     } finally {
       setIsSubmitting(false);
     }

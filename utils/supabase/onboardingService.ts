@@ -98,9 +98,9 @@ export const AgencyOnboardingService = {
       .upsert({
         agency_id: userId,
         current_clients: data.currentClients,
-        placements: data.successMetrics.placements,
-        time_to_hire: data.successMetrics.timeToHire,
-        client_retention: data.successMetrics.clientRetention
+        avg_placements: data.successMetrics.placements,
+        avg_time_to_hire: data.successMetrics.timeToHire,
+        client_retention_rate: data.successMetrics.clientRetention
       });
 
     if (error) throw error;

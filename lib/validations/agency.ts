@@ -33,8 +33,8 @@ export const recruiterProfileSchema = z.object({
 export const clientPortfolioSchema = z.object({
   currentClients: z.array(z.string()).min(1, "Add at least one client"),
   successMetrics: z.object({
-    placements: z.string().min(1, "Number of placements is required"),
-    timeToHire: z.string().min(1, "Average time to hire is required"),
+    placements: z.string().min(1, "Placements metric is required"),
+    timeToHire: z.string().min(1, "Time to hire metric is required"),
     clientRetention: z.string().min(1, "Client retention rate is required")
   })
 });

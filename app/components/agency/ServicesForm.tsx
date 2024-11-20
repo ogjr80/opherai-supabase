@@ -12,7 +12,8 @@ interface ServicesFormProps {
       rates: string;
     };
   };
-  updateData: (field: string, value: string | string[]) => void;
+  updateData: (field: string, value: any) => void;
+  fieldErrors?: Record<string, string>;
 }
 
 const recruitmentTypes = [
@@ -26,13 +27,14 @@ const recruitmentTypes = [
   'C-Level Recruitment'
 ];
 
-const feeStructures = [
-  'Percentage of Annual Salary',
-  'Fixed Fee per Position',
-  'Retainer + Success Fee',
-  'Hourly Rate',
-  'Project-Based Fee',
-  'Monthly Retainer'
+const industries = [
+  'Technology',
+  'Healthcare',
+  'Finance',
+  'Manufacturing',
+  'Retail',
+  'Education',
+  'Professional Services'
 ];
 
 const locations = [
@@ -45,7 +47,7 @@ const locations = [
   'Global'
 ];
 
-const ServicesForm = ({ data, updateData }: ServicesFormProps) => {
+const ServicesForm = ({ data, updateData, fieldErrors = {} }: ServicesFormProps) => {
   const [selectedRecruitmentTypes, setSelectedRecruitmentTypes] = useState<string[]>(data.recruitmentTypes);
   const [selectedIndustries, setSelectedIndustries] = useState<string[]>(data.industries);
   const [selectedLocations, setSelectedLocations] = useState<string[]>(data.locations);
@@ -56,6 +58,14 @@ const ServicesForm = ({ data, updateData }: ServicesFormProps) => {
       : [...selectedRecruitmentTypes, type];
     setSelectedRecruitmentTypes(updated);
     updateData('recruitmentTypes', updated);
+  };
+
+  const handleIndustryChange = (industry: string) => {
+    const updated = selectedIndustries.includes(industry)
+      ? selectedIndustries.filter(i => i !== industry)
+      : [...selectedIndustries, industry];
+    setSelectedIndustries(updated);
+    updateData('industries', updated);
   };
 
   const handleLocationChange = (location: string) => {
@@ -87,6 +97,7 @@ const ServicesForm = ({ data, updateData }: ServicesFormProps) => {
           {recruitmentTypes.map((type) => (
             <motion.button
               key={type}
+              type="button"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => handleTypeChange(type)}
@@ -101,6 +112,36 @@ const ServicesForm = ({ data, updateData }: ServicesFormProps) => {
             </motion.button>
           ))}
         </div>
+        {fieldErrors['recruitmentTypes'] && (
+          <p className="text-sm text-red-500">{fieldErrors['recruitmentTypes']}</p>
+        )}
+      </div>
+
+      <div className="space-y-4">
+        <label className="block text-lg font-medium text-gray-900">
+          Industries Served
+        </label>
+        <div className="grid grid-cols-2 gap-3">
+          {industries.map((industry) => (
+            <motion.button
+              key={industry}
+              type="button"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => handleIndustryChange(industry)}
+              className={`p-3 rounded-lg text-sm border transition-colors
+                ${selectedIndustries.includes(industry)
+                  ? 'bg-green-50 border-green-200 text-green-700'
+                  : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+                }`}
+            >
+              {industry}
+            </motion.button>
+          ))}
+        </div>
+        {fieldErrors['industries'] && (
+          <p className="text-sm text-red-500">{fieldErrors['industries']}</p>
+        )}
       </div>
 
       <div className="space-y-4">
@@ -111,12 +152,13 @@ const ServicesForm = ({ data, updateData }: ServicesFormProps) => {
           {locations.map((location) => (
             <motion.button
               key={location}
+              type="button"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => handleLocationChange(location)}
               className={`p-3 rounded-lg text-sm border transition-colors
                 ${selectedLocations.includes(location)
-                  ? 'bg-green-50 border-green-200 text-green-700'
+                  ? 'bg-blue-50 border-blue-200 text-blue-700'
                   : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
                 }`}
             >
@@ -125,6 +167,9 @@ const ServicesForm = ({ data, updateData }: ServicesFormProps) => {
             </motion.button>
           ))}
         </div>
+        {fieldErrors['locations'] && (
+          <p className="text-sm text-red-500">{fieldErrors['locations']}</p>
+        )}
       </div>
 
       <div className="space-y-4">
@@ -135,7 +180,7 @@ const ServicesForm = ({ data, updateData }: ServicesFormProps) => {
           value={data.fees.structure}
           onChange={(e) => handleFeeUpdate('structure', e.target.value)}
           className={`block w-full p-3 border rounded-lg focus:ring-blue-500 focus:border-blue-500 
-            ${!data.fees.structure ? 'border-red-300' : 'border-gray-300'}`}
+            ${fieldErrors['fees.structure'] ? 'border-red-300' : 'border-gray-300'}`}
         >
           <option value="">Select fee structure</option>
           <option value="Percentage">Percentage of Salary</option>
@@ -143,6 +188,9 @@ const ServicesForm = ({ data, updateData }: ServicesFormProps) => {
           <option value="Retainer">Monthly Retainer</option>
           <option value="Hybrid">Hybrid Model</option>
         </select>
+        {fieldErrors['fees.structure'] && (
+          <p className="text-sm text-red-500">{fieldErrors['fees.structure']}</p>
+        )}
 
         <div className="space-y-2">
           <label className="block text-lg font-medium text-gray-900">
@@ -153,9 +201,12 @@ const ServicesForm = ({ data, updateData }: ServicesFormProps) => {
             value={data.fees.rates}
             onChange={(e) => handleFeeUpdate('rates', e.target.value)}
             className={`block w-full p-3 border rounded-lg focus:ring-blue-500 focus:border-blue-500
-              ${!data.fees.rates ? 'border-red-300' : 'border-gray-300'}`}
+              ${fieldErrors['fees.rates'] ? 'border-red-300' : 'border-gray-300'}`}
             placeholder="Enter rate details"
           />
+          {fieldErrors['fees.rates'] && (
+            <p className="text-sm text-red-500">{fieldErrors['fees.rates']}</p>
+          )}
         </div>
       </div>
     </motion.div>

@@ -107,23 +107,38 @@ export const AgencyOnboardingService = {
   },
 
   async completeOnboarding(userId: string) {
-    const { error } = await supabase.auth.updateUser({
-      data: { onboarded: true }
-    });
+    try {
+      // Update user metadata to mark onboarding as complete
+      const { error: userError } = await supabase.auth.updateUser({
+        data: { onboarded: true }
+      });
 
-    if (error) throw error;
+      if (userError) throw userError;
+
+      // Clear onboarding progress after successful completion
+      await this.clearProgress(userId);
+    } catch (error) {
+      console.error('Error completing onboarding:', error);
+      throw error;
+    }
   },
 
   async saveProgress(userId: string, step: number, formData: AgencyFormData) {
     try {
       const { data, error } = await supabase
         .from('agency_onboarding_progress')
-        .upsert({
-          user_id: userId,
-          current_step: step,
-          form_data: formData,
-          last_updated: new Date().toISOString()
-        })
+        .upsert(
+          {
+            user_id: userId,
+            current_step: step,
+            form_data: formData,
+            last_updated: new Date().toISOString()
+          },
+          {
+            onConflict: 'user_id',
+            ignoreDuplicates: false
+          }
+        )
         .select();
 
       if (error) {
@@ -144,15 +159,13 @@ export const AgencyOnboardingService = {
         .from('agency_onboarding_progress')
         .select('current_step, form_data')
         .eq('user_id', userId)
-        .maybeSingle();
+        .single();
 
       if (error) {
-        console.error('Supabase error:', error);
-        return null;
-      }
-
-      if (!data) {
-        return null;
+        if (error.code === 'PGRST116') { // No rows returned
+          throw new Error('No saved progress found');
+        }
+        throw error;
       }
 
       return {
@@ -161,7 +174,21 @@ export const AgencyOnboardingService = {
       };
     } catch (error) {
       console.error('Error in loadProgress:', error);
-      return null;
+      throw error;
+    }
+  },
+
+  async clearProgress(userId: string) {
+    try {
+      const { error } = await supabase
+        .from('agency_onboarding_progress')
+        .delete()
+        .eq('user_id', userId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error clearing progress:', error);
+      throw error;
     }
   }
 };

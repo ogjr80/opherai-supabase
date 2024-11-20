@@ -121,6 +121,7 @@ export default function AgencyOnboarding() {
       description: 'Your recruitment services and specializations',
       component: <ServicesForm 
         data={formData.services}
+        fieldErrors={fieldErrors}
         updateData={(field, value) => {
           setFormData(prev => ({
             ...prev,

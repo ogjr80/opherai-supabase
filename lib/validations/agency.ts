@@ -18,7 +18,7 @@ export const agencyServicesSchema = z.object({
   locations: z.array(z.string()).min(1, "Select at least one location"),
   fees: z.object({
     structure: z.string().min(1, "Fee structure is required"),
-    rates: z.string().min(1, "Rates information is required")
+    rates: z.string().min(1, "Rate details are required")
   })
 });
 

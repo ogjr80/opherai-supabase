@@ -15,18 +15,11 @@ interface Experience {
 }
 
 interface ExperienceFormProps {
-  experience: Experience[];
-  addExperience: () => void;
-  removeExperience: (index: number) => void;
-  updateExperience: (index: number, field: string, value: string | string[]) => void;
+  data: Experience[];
+  updateData: (field: string, value: Experience[]) => void;
 }
 
-const ExperienceForm = ({ 
-  experience, 
-  addExperience, 
-  removeExperience, 
-  updateExperience 
-}: ExperienceFormProps) => {
+const ExperienceForm = ({ data, updateData }: ExperienceFormProps) => {
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [formData, setFormData] = useState<Experience>({
     company: '',
@@ -39,20 +32,17 @@ const ExperienceForm = ({
 
   const handleEdit = (index: number) => {
     setEditIndex(index);
-    setFormData(experience[index]);
+    setFormData(data[index]);
   };
 
   const handleSubmit = () => {
+    const newExperience = [...data];
     if (editIndex !== null) {
-      Object.entries(formData).forEach(([field, value]) => {
-        updateExperience(editIndex, field, value);
-      });
+      newExperience[editIndex] = formData;
     } else {
-      addExperience();
-      Object.entries(formData).forEach(([field, value]) => {
-        updateExperience(experience.length, field, value);
-      });
+      newExperience.push(formData);
     }
+    updateData('experience', newExperience);
     setEditIndex(null);
     setFormData({
       company: '',
@@ -62,6 +52,11 @@ const ExperienceForm = ({
       description: '',
       achievements: []
     });
+  };
+
+  const handleDelete = (index: number) => {
+    const newExperience = data.filter((_, i) => i !== index);
+    updateData('experience', newExperience);
   };
 
   const addAchievement = () => {
@@ -101,7 +96,7 @@ const ExperienceForm = ({
   };
 
   const tableHeaders = ['Company & Position', 'Duration', 'Description', 'Achievements'];
-  const tableRows = experience.map(exp => [
+  const tableRows = data.map(exp => [
     <div key={`${exp.company}-${exp.position}`} className="space-y-1">
       <div className="font-medium">{exp.company}</div>
       <div className="text-sm text-gray-500">{exp.position}</div>
@@ -134,12 +129,12 @@ const ExperienceForm = ({
         <CardTitle className="text-2xl font-bold text-gray-900">Work Experience</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {experience.length > 0 ? (
+        {data.length > 0 ? (
           <TableView
             headers={tableHeaders}
             rows={tableRows}
             onEdit={handleEdit}
-            onDelete={removeExperience}
+            onDelete={handleDelete}
           />
         ) : (
           <div className="text-center py-12 bg-gray-50 rounded-lg">
@@ -150,7 +145,7 @@ const ExperienceForm = ({
         <FormDialog
           trigger={
             <Button className="w-full" size="lg">
-              {experience.length === 0 ? 'Add Experience' : 'Add Another Experience'}
+              {data.length === 0 ? 'Add Experience' : 'Add Another Experience'}
             </Button>
           }
           title={editIndex !== null ? 'Edit Experience' : 'Add New Experience'}

@@ -18,6 +18,7 @@ import {
   GraduationCap,
   Clock
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface TalentProfile {
   id: string;
@@ -52,14 +53,42 @@ const mockTalentProfiles: TalentProfile[] = [
   // Add more mock profiles...
 ];
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 24
+    }
+  }
+};
+
 export default function TalentSearchPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [savedOnly, setSavedOnly] = useState(false);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <motion.div 
+      className="space-y-8 p-8"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
+      <motion.div variants={itemVariants} className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Talent Search</h1>
           <p className="text-gray-500">Find and connect with top talent</p>
@@ -68,7 +97,7 @@ export default function TalentSearchPage() {
           <Star className="w-4 h-4 mr-2" />
           Saved Talent
         </Button>
-      </div>
+      </motion.div>
 
       <Card>
         <CardHeader>
@@ -150,6 +179,6 @@ export default function TalentSearchPage() {
           </ScrollArea>
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
   );
 }

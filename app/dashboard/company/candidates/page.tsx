@@ -11,6 +11,7 @@ import useDebounce from '@/hooks/useDebounce';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import { Search, Filter, Calendar, Mail, Star, StarOff, UserPlus } from 'lucide-react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 
 const stages = [
   { value: 'All', label: 'All Candidates' },
@@ -21,6 +22,29 @@ const stages = [
   { value: 'Hired', label: 'Hired' },
   { value: 'Rejected', label: 'Rejected' }
 ];
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 24
+    }
+  }
+};
 
 export default function CandidatesPage() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -110,91 +134,101 @@ export default function CandidatesPage() {
   );
 
   return (
-    <div className="space-y-6">
-      {/* Header with Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <motion.div 
+      className="space-y-8 p-8"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
+      {/* Header Section */}
+      <motion.div variants={itemVariants} className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Candidates</h1>
+          <p className="text-gray-500">Manage your candidate pipeline</p>
+        </div>
+        <Button>
+          <UserPlus className="w-4 h-4 mr-2" />
+          Add Candidate
+        </Button>
+      </motion.div>
+
+      {/* Stats Overview */}
+      <motion.div 
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+        variants={containerVariants}
+      >
+        {/* Your existing candidate list content here */}
+      </motion.div>
+
+      {/* Main Content Area */}
+      <motion.div variants={itemVariants}>
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Total Candidates</p>
-                <p className="text-2xl font-bold">1,234</p>
+          <CardHeader>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
+              <div className="flex-1 max-w-2xl">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="Search candidates by name, skills, or role..."
+                    className="pl-10 pr-4"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
               </div>
-              <UserPlus className="h-8 w-8 text-blue-500" />
+              <div className="flex space-x-2">
+                <Button variant="outline">
+                  <Filter className="w-4 h-4 mr-2" />
+                  Filters
+                </Button>
+                <Button variant="outline">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Schedule
+                </Button>
+                <Button variant="outline">
+                  <Mail className="w-4 h-4 mr-2" />
+                  Message
+                </Button>
+              </div>
             </div>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="All" className="w-full">
+              <TabsList className="mb-4">
+                {stages.map((stage) => (
+                  <TabsTrigger
+                    key={stage.value}
+                    value={stage.value}
+                    onClick={() => setCurrentStage(stage.value)}
+                  >
+                    {stage.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+
+              <TabsContent value={currentStage}>
+                <div className="mt-4">
+                  {isLoading ? (
+                    <div className="flex justify-center p-8">
+                      <LoadingSpinner />
+                    </div>
+                  ) : error ? (
+                    <div className="text-center text-red-500 p-8">{error}</div>
+                  ) : candidates.length === 0 ? (
+                    <div className="text-center text-gray-500 p-8">
+                      No candidates found
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {candidates.map(renderCandidateCard)}
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
-        {/* Add more stat cards */}
-      </div>
-
-      {/* Main Content */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
-            <div className="flex-1 max-w-2xl">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search candidates by name, skills, or role..."
-                  className="pl-10 pr-4"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="flex space-x-2">
-              <Button variant="outline">
-                <Filter className="w-4 h-4 mr-2" />
-                Filters
-              </Button>
-              <Button variant="outline">
-                <Calendar className="w-4 h-4 mr-2" />
-                Schedule
-              </Button>
-              <Button variant="outline">
-                <Mail className="w-4 h-4 mr-2" />
-                Message
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent>
-          <Tabs defaultValue="All" className="w-full">
-            <TabsList className="mb-4">
-              {stages.map((stage) => (
-                <TabsTrigger
-                  key={stage.value}
-                  value={stage.value}
-                  onClick={() => setCurrentStage(stage.value)}
-                >
-                  {stage.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-
-            <TabsContent value={currentStage}>
-              <div className="mt-4">
-                {isLoading ? (
-                  <div className="flex justify-center p-8">
-                    <LoadingSpinner />
-                  </div>
-                ) : error ? (
-                  <div className="text-center text-red-500 p-8">{error}</div>
-                ) : candidates.length === 0 ? (
-                  <div className="text-center text-gray-500 p-8">
-                    No candidates found
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {candidates.map(renderCandidateCard)}
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

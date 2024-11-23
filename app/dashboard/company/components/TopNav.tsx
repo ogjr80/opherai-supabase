@@ -1,6 +1,8 @@
 'use client';
-import { Bell, Search, User } from 'lucide-react';
+import { Bell, Search, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { createClient } from '@/utils/supabase/client';
+import { toast } from 'sonner';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +13,21 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export default function CompanyTopNav() {
+  const handleLogout = async () => {
+    const supabase = createClient();
+    
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+
+      localStorage.removeItem('supabase.auth.token');
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Error logging out:', error);
+      toast.error('Failed to log out');
+    }
+  };
+
   return (
     <div className="h-16 border-b bg-white fixed top-0 left-0 right-0 z-50">
       <div className="flex items-center justify-between h-full px-4">
@@ -46,7 +63,10 @@ export default function CompanyTopNav() {
               <DropdownMenuItem>Settings</DropdownMenuItem>
               <DropdownMenuItem>Team</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Log out</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout} className="text-red-600 cursor-pointer">
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

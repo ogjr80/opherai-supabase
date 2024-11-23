@@ -1,24 +1,29 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import BackButton from '@/app/components/navigation/BackButton';
-import { FaGraduationCap, FaBriefcase, FaCode, FaUser, FaProjectDiagram, FaCheckCircle, FaFileUpload } from 'react-icons/fa';
+import { User, GraduationCap, Briefcase, Code, CheckCircle , ProjectorIcon} from 'lucide-react';
 import { toast } from 'sonner';
-import Link from 'next/link';
-
+import StepIndicator from '@/app/components/StepIndicator';
 import BiographyForm from '@/app/components/candidate/BiographyForm';
 import EducationForm from '@/app/components/candidate/EducationForm';
 import ExperienceForm from '@/app/components/candidate/ExperienceForm';
 import ProjectsForm from '@/app/components/candidate/ProjectsForm';
 import SkillsForm from '@/app/components/candidate/SkillsForm';
-import StepIndicator from '@/app/components/StepIndicator';
-import OnboardingMethodSelection from '@/app/components/candidate/OnboardingMethodSelection';
-import ResumeUploadForm from '@/app/components/candidate/ResumeUploadForm';
+import ReviewForm from '@/app/components/candidate/SummaryStep';
+import { createClient } from '@/utils/supabase/client';
+import { CandidateOnboardingService } from '@/utils/supabase/candidateOnboardingservices';
+import {
+  personalInfoSchema,
+  educationSchema,
+  experienceSchema,
+  projectSchema,
+  skillSchema
+} from '@/lib/validations/candidate';
+import { z } from 'zod';
 
-import { getEmptyItem } from '@/app/components/utils/formHelpers';
-
-interface Education {
+export interface Education {
   institution: string;
   degree: string;
   fieldOfStudy: string;
@@ -27,7 +32,7 @@ interface Education {
   grade?: string;
 }
 
-interface Experience {
+export interface Experience {
   company: string;
   position: string;
   startDate: string;
@@ -36,7 +41,7 @@ interface Experience {
   achievements: string[];
 }
 
-interface Project {
+export interface Project {
   name: string;
   description: string;
   technologies: string[];
@@ -45,259 +50,275 @@ interface Project {
   endDate: string;
 }
 
-interface Skill {
+export interface Skill {
   name: string;
   level: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
   yearsOfExperience: number;
 }
 
-const CandidateOnboarding = () => {
+export interface CandidateProfile {
+  biography: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    location: string;
+    about: string;
+    linkedIn?: string;
+    github?: string;
+    portfolio?: string;
+  };
+  education: Education[];
+  experience: Experience[];
+  projects: Project[];
+  skills: Skill[];
+}
+
+export type CandidateFormData = CandidateProfile;
+
+export interface CandidateFormProps {
+  data: CandidateFormData;
+  updateData: (field: string, value: any) => void;
+  fieldErrors?: Record<string, string>;
+}
+const initialFormData: CandidateFormData = {
+  biography: {
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    location: '',
+    about: '',
+    linkedIn: '',
+    github: '',
+    portfolio: ''
+  },
+  education: [],
+  experience: [],
+  projects: [],
+  skills: []
+};
+
+export default function CandidateOnboarding() {
   const router = useRouter();
-  const [onboardingMethod, setOnboardingMethod] = useState<'manual' | 'resume' | null>(null);
   const [step, setStep] = useState(0);
-  const [formData, setFormData] = useState({
-    biography: {
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      location: '',
-      about: '',
-      linkedIn: '',
-      github: '',
-      portfolio: '',
-    },
-    education: [] as Education[],
-    experience: [] as Experience[],
-    projects: [] as Project[],
-    skills: [] as Skill[],
-  });
+  const [formData, setFormData] = useState<CandidateFormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isProcessingResume, setIsProcessingResume] = useState(false);
-
-  const addItem = (section: 'education' | 'experience' | 'projects' | 'skills') => {
-    setFormData(prev => ({
-      ...prev,
-      [section]: [...prev[section], getEmptyItem(section)]
-    }));
-  };
-
-  const removeItem = (section: 'education' | 'experience' | 'projects' | 'skills', index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      [section]: prev[section].filter((_, i) => i !== index)
-    }));
-  };
-
-  const updateItem = (
-    section: 'education' | 'experience' | 'projects' | 'skills',
-    index: number,
-    field: string,
-    value: string | number | string[] | boolean
-  ) => {
-    setFormData(prev => ({
-      ...prev,
-      [section]: prev[section].map((item, i) => 
-        i === index ? { ...item, [field]: value } : item
-      )
-    }));
-  };
-
-  const handleResumeUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setIsProcessingResume(true);
-    const formData = new FormData();
-    formData.append('resume', file);
-
-    try {
-      // Call your AI resume parsing endpoint
-      const response = await fetch('/api/parse-resume', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) throw new Error('Failed to parse resume');
-
-      const parsedData = await response.json();
-      
-      // Update form data with parsed information
-      setFormData(parsedData);
-      setOnboardingMethod('manual'); // Switch to manual mode for review/editing
-      toast.success('Resume parsed successfully! Please review and edit the information.');
-    } catch (error) {
-      console.error('Error parsing resume:', error);
-      toast.error('Failed to parse resume. Please try again or use manual input.');
-    } finally {
-      setIsProcessingResume(false);
-    }
-  };
-
-  if (!onboardingMethod) {
-    return <OnboardingMethodSelection onSelect={setOnboardingMethod} />;
-  }
-
-  if (onboardingMethod === 'resume') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="max-w-xl w-full space-y-8">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="text-center"
-          >
-            <h2 className="text-3xl font-bold text-gray-900">Upload Your Resume</h2>
-            <p className="mt-2 text-gray-600">We'll help you create a great profile from your resume</p>
-          </motion.div>
-          
-          <ResumeUploadForm 
-            onUpload={handleResumeUpload}
-            isProcessing={isProcessingResume}
-          />
-        </div>
-      </div>
-    );
-  }
+  const [isValidating, setIsValidating] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const steps = [
     {
-      title: 'Biography',
-      icon: FaUser,
+      title: 'Personal Info',
+      icon: User,
+      description: 'Basic information',
       component: <BiographyForm 
-        data={formData.biography} 
-        updateData={(field: string, value: string) => 
+        data={formData.biography}
+        updateData={(field, value) => {
           setFormData(prev => ({
             ...prev,
             biography: { ...prev.biography, [field]: value }
-          }))
-        }
+          }));
+        }}
       />
     },
     {
       title: 'Education',
-      icon: FaGraduationCap,
+      icon: GraduationCap,
+      description: 'Academic background',
       component: <EducationForm 
-        education={formData.education}
-        addEducation={() => addItem('education')}
-        removeEducation={(index) => removeItem('education', index)}
-        updateEducation={(index, field, value) => 
-          updateItem('education', index, field, value)
-        }
+        data={formData.education}
+        updateData={(field, value) => {
+          setFormData(prev => ({
+            ...prev,
+            education: value
+          }));
+        }}
       />
     },
     {
       title: 'Experience',
-      icon: FaBriefcase,
-      component: <ExperienceForm 
-        experience={formData.experience}
-        addExperience={() => addItem('experience')}
-        removeExperience={(index) => removeItem('experience', index)}
-        updateExperience={(index, field, value) => 
-          updateItem('experience', index, field, value)
-        }
+      icon: Briefcase,
+      description: 'Work history',
+      component: <ExperienceForm
+        data={formData.experience}
+        updateData={(field, value) => {
+          setFormData(prev => ({
+            ...prev,
+            experience: value
+          }));
+        }}
       />
     },
     {
       title: 'Projects',
-      icon: FaProjectDiagram,
-      component: <ProjectsForm 
-        projects={formData.projects}
-        addProject={() => addItem('projects')}
-        removeProject={(index) => removeItem('projects', index)}
-        updateProject={(index, field, value) => 
-          updateItem('projects', index, field, value)
-        }
+      icon: ProjectorIcon,
+      description: 'Portfolio projects',
+      component: <ProjectsForm
+        data={formData.projects}
+        updateData={(field, value) => {
+          setFormData(prev => ({
+            ...prev,
+            projects: value
+          }));
+        }}
       />
     },
     {
       title: 'Skills',
-      icon: FaCode,
-      component: <SkillsForm 
-        skills={formData.skills}
-        addSkill={() => addItem('skills')}
-        removeSkill={(index) => removeItem('skills', index)}
-        updateSkill={(index, field, value) => 
-          updateItem('skills', index, field, value)
-        }
+      icon: Code,
+      description: 'Technical skills',
+      component: <SkillsForm
+        data={formData.skills}
+        updateData={(field, value) => {
+          setFormData(prev => ({
+            ...prev,
+            skills: value
+          }));
+        }}
       />
     },
     {
-      title: 'Summary',
-      icon: FaCheckCircle,
-      component: (
-        <div className="space-y-6 text-center">
-          <div className="space-y-2">
-            <h3 className="text-2xl font-bold text-gray-900">Thank You for Completing Your Profile!</h3>
-            <p className="text-gray-600">
-              Your profile has been successfully created. We will use this information to match you with the best opportunities.
-            </p>
-          </div>
-
-          <div className="bg-green-50 p-6 rounded-lg">
-            <h4 className="font-semibold text-green-800 mb-2">Profile Summary</h4>
-            <div className="space-y-2 text-left">
-              <p className="text-green-700">
-                ✓ Personal Information: {formData.biography.firstName} {formData.biography.lastName}
-              </p>
-              <p className="text-green-700">
-                ✓ Education: {formData.education.length} entries added
-              </p>
-              <p className="text-green-700">
-                ✓ Experience: {formData.experience.length} entries added
-              </p>
-              <p className="text-green-700">
-                ✓ Projects: {formData.projects.length} entries added
-              </p>
-              <p className="text-green-700">
-                ✓ Skills: {formData.skills.length} skills added
-              </p>
-            </div>
-          </div>
-
-          <div className="pt-4">
-            <p className="text-gray-600 mb-4">
-              Ready to explore opportunities? Visit your dashboard to get started!
-            </p>
-            <Link 
-              href="/dashboard/candidate"
-              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Go to Dashboard
-            </Link>
-          </div>
-        </div>
-      )
+      title: 'Review',
+      icon: CheckCircle,
+      description: 'Review profile',
+      component: <ReviewForm data={formData} />
     }
   ];
 
-  const handleSubmit = () => {
+  const validateStep = async (currentStep: number) => {
+    setIsValidating(true);
+    setFieldErrors({});
+    
     try {
-      setIsSubmitting(true);
-      
-    //   // Here you would send the data to your backend
-    //   const response = await fetch('/api/candidate/onboarding', {
-    //     method: 'POST',
-    //     headers: {
-    //       'Content-Type': 'application/json',
-    //     },
-    //     body: JSON.stringify(formData),
-    //   });
-
-    //   if (!response.ok) {
-    //     throw new Error('Failed to submit onboarding data');
-    //   }
-
-      toast.success('Profile created successfully!');
-      router.push('/dashboard/candidate'); // Redirect to candidate dashboard
+      switch (currentStep) {
+        case 0:
+          await personalInfoSchema.parseAsync(formData.biography);
+          break;
+        case 1:
+          await educationSchema.parseAsync(formData.education);
+          break;
+        case 2:
+          await experienceSchema.parseAsync(formData.experience);
+          break;
+        case 3:
+          await projectSchema.parseAsync(formData.projects);
+          break;
+        case 4:
+          await skillSchema.parseAsync(formData.skills);
+          break;
+      }
+      setIsValidating(false);
+      return true;
     } catch (error) {
-      console.error('Error submitting form:', error);
-      toast.error('Failed to create profile. Please try again.');
+      if (error instanceof z.ZodError) {
+        const errors = {};
+        error.errors.forEach(err => {
+          const path = err.path.join('.');
+          errors[path] = err.message;
+          toast.error(err.message);
+        });
+        setFieldErrors(errors);
+      }
+      setIsValidating(false);
+      return false;
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('No user found');
+      }
+
+      setIsSubmitting(true);
+      await CandidateOnboardingService.completeOnboarding(user.id);
+      
+      toast.success('Profile created successfully!');
+      router.push('/dashboard/candidate');
+    } catch (error) {
+      console.error('Onboarding error:', error);
+      toast.error('Failed to complete setup');
     } finally {
       setIsSubmitting(false);
     }
   };
+  const handleNext = async () => {
+    setIsValidating(true);
+    setFieldErrors({});
+
+    if (step === steps.length - 1) {
+      handleSubmit();
+    } else {
+      const isValid = await validateStep(step);
+      
+      if (isValid) {
+        try {
+          const supabase = createClient();
+          const { data: { user } } = await supabase.auth.getUser();
+          
+          if (user) {
+            setIsSubmitting(true);
+            
+            switch (step) {
+              case 0:
+                await CandidateOnboardingService.updateBiography(user.id, formData.biography);
+                break;
+              case 1:
+                await CandidateOnboardingService.updateEducation(user.id, formData.education);
+                break;
+              case 2:
+                await CandidateOnboardingService.updateExperience(user.id, formData.experience);
+                break;
+              case 3:
+                await CandidateOnboardingService.updateProjects(user.id, formData.projects);
+                break;
+              case 4:
+                await CandidateOnboardingService.updateSkills(user.id, formData.skills);
+                break;
+            }
+            
+            await CandidateOnboardingService.saveProgress(user.id, step + 1, formData);
+            setStep(prev => prev + 1);
+          }
+        } catch (error) {
+          console.error('Error saving data:', error);
+          toast.error('Failed to save data');
+        } finally {
+          setIsSubmitting(false);
+        }
+      }
+    }
+    setIsValidating(false);
+  };
+
+  useEffect(() => {
+    const loadSavedProgress = async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) return;
+
+        const progress = await CandidateOnboardingService.loadProgress(user.id);
+        
+        if (progress?.form_data) {
+          setStep(progress.current_step);
+          setFormData(progress.form_data);
+        }
+      } catch (error) {
+        console.error('Error loading progress:', error);
+        if (error.message !== 'No saved progress found') {
+          toast.error('Failed to load saved progress');
+        }
+      }
+    };
+    
+    loadSavedProgress();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -305,10 +326,14 @@ const CandidateOnboarding = () => {
         <div className="flex justify-between items-center">
           <BackButton href="/getting-started" />
           <h1 className="text-3xl font-bold text-center">Create Your Profile</h1>
-          <div className="w-24" /> {/* Spacer for alignment */}
+          <div className="w-24" />
         </div>
         
-        <div className="mb-8">
+        <div className="space-y-6">
+          <p className="text-gray-500 text-center max-w-2xl mx-auto">
+            Let's build your professional profile to help you find the perfect opportunities.
+          </p>
+          
           <div className="flex justify-center space-x-4">
             {steps.map((stepItem, index) => (
               <StepIndicator 
@@ -344,14 +369,15 @@ const CandidateOnboarding = () => {
             Previous
           </button>
           <button
-            onClick={() => step === steps.length - 1 ? handleSubmit() : setStep(prev => prev + 1)}
-            disabled={isSubmitting}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg disabled:opacity-75 flex items-center gap-2"
+            onClick={handleNext}
+            disabled={isSubmitting || isValidating}
+            className={`px-6 py-3 text-white rounded-lg flex items-center gap-2
+              ${isSubmitting || isValidating ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'}`}
           >
-            {isSubmitting ? (
+            {isSubmitting || isValidating ? (
               <>
                 <span className="animate-spin">⚪</span>
-                Saving...
+                {isSubmitting ? 'Saving...' : 'Validating...'}
               </>
             ) : (
               step === steps.length - 1 ? 'Complete Profile' : 'Next'
@@ -361,6 +387,4 @@ const CandidateOnboarding = () => {
       </div>
     </div>
   );
-};
-
-export default CandidateOnboarding;
+}

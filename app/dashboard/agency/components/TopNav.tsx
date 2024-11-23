@@ -1,5 +1,7 @@
 'use client';
 import { useState } from 'react';
+import { createClient } from '@/utils/supabase/client';
+import { toast } from 'sonner';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,6 +24,21 @@ import {
 export default function AgencyTopnav() {
   const [unreadNotifications] = useState(3);
   const [unreadMessages] = useState(2);
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+
+      localStorage.removeItem('supabase.auth.token');
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Error logging out:', error);
+      toast.error('Failed to log out');
+    }
+  };
 
   return (
     <div className="h-16 border-b bg-white">
@@ -73,7 +90,10 @@ export default function AgencyTopnav() {
                 <span>Settings</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600">
+              <DropdownMenuItem 
+                className="text-red-600 cursor-pointer" 
+                onClick={handleLogout}
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>

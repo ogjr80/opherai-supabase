@@ -6,11 +6,24 @@ import { FormInput, FormTextarea, FormDialog } from './FormComponents';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Github, Globe, Calendar } from 'lucide-react';
 
-const ProjectsForm = ({ projects, addProject, removeProject, updateProject }) => {
-  const [editIndex, setEditIndex] = useState(null);
+export interface Project {
+  name: string;
+  description: string;
+  technologies: string[];
+  link?: string;
+  startDate: string;
+  endDate: string;
+}
+interface ProjectsFormProps {
+  data: Project[];
+  updateData: (field: string, value: Project[]) => void;
+}
+
+const ProjectsForm = ({ data, updateData }: ProjectsFormProps) => {
+  const [editIndex, setEditIndex] = useState<number | null>(null);
   const [activeView, setActiveView] = useState('grid');
   const [searchTerm, setSearchTerm] = useState('');
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Project>({
     name: '',
     description: '',
     technologies: [],
@@ -19,22 +32,19 @@ const ProjectsForm = ({ projects, addProject, removeProject, updateProject }) =>
     endDate: ''
   });
 
-  const handleEdit = (index) => {
+  const handleEdit = (index: number) => {
     setEditIndex(index);
-    setFormData(projects[index]);
+    setFormData(data[index]);
   };
 
   const handleSubmit = () => {
+    const newProjects = [...data];
     if (editIndex !== null) {
-      Object.entries(formData).forEach(([field, value]) => {
-        updateProject(editIndex, field, value);
-      });
+      newProjects[editIndex] = formData;
     } else {
-      addProject();
-      Object.entries(formData).forEach(([field, value]) => {
-        updateProject(projects.length, field, value);
-      });
+      newProjects.push(formData);
     }
+    updateData('projects', newProjects);
     setEditIndex(null);
     setFormData({
       name: '',
@@ -46,6 +56,11 @@ const ProjectsForm = ({ projects, addProject, removeProject, updateProject }) =>
     });
   };
 
+  const handleDelete = (index: number) => {
+    const newProjects = data.filter((_, i) => i !== index);
+    updateData('projects', newProjects);
+  };
+
   const handleTechnologyChange = (value) => {
     setFormData({
       ...formData,
@@ -53,7 +68,7 @@ const ProjectsForm = ({ projects, addProject, removeProject, updateProject }) =>
     });
   };
 
-  const filteredProjects = projects.filter(project =>
+  const filteredProjects = data.filter(project =>
     project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     project.technologies.some(tech => tech.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -199,7 +214,7 @@ const ProjectsForm = ({ projects, addProject, removeProject, updateProject }) =>
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => removeProject(index)}
+                              onClick={() => handleDelete(index)}
                               className="text-red-600 hover:text-red-900"
                             >
                               Remove
@@ -324,7 +339,7 @@ const ProjectsForm = ({ projects, addProject, removeProject, updateProject }) =>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => removeProject(index)}
+                            onClick={() => handleDelete(index)}
                             className="text-red-600 hover:text-red-900"
                           >
                             Remove

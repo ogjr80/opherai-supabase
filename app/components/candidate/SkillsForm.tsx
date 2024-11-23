@@ -31,48 +31,65 @@ const skillLevels = [
     progress: 100
   }
 ];
+export interface Skill {
+  name: string;
+  level: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
+  yearsOfExperience: number;
+}
 
-const SkillsForm = ({ skills, addSkill, removeSkill, updateSkill }) => {
-  const [editIndex, setEditIndex] = useState(null);
-  const [formData, setFormData] = useState({
+interface SkillsFormProps {
+  data: Skill[];
+  updateData: (field: string, value: Skill[]) => void;
+}
+
+const SkillsForm = ({ data, updateData }: SkillsFormProps) => {
+  const [editIndex, setEditIndex] = useState<number | null>(null);
+  const [formData, setFormData] = useState<Skill>({
     name: '',
-    level: '',
-    yearsOfExperience: ''
+    level: 'Beginner',
+    yearsOfExperience: 0
   });
 
-  const handleEdit = (index) => {
+  const handleEdit = (index: number) => {
     setEditIndex(index);
-    setFormData(skills[index]);
+    setFormData(data[index]);
+  };
+
+  const handleDelete = (index: number) => {
+    const newSkills = data.filter((_, i) => i !== index);
+    updateData('skills', newSkills);
   };
 
   const handleSubmit = () => {
+    const newSkills = [...data];
+    const formattedData = {
+      ...formData,
+      yearsOfExperience: Number(formData.yearsOfExperience)
+    };
+    
     if (editIndex !== null) {
-      Object.entries(formData).forEach(([field, value]) => {
-        updateSkill(editIndex, field, value);
-      });
+      newSkills[editIndex] = formattedData;
     } else {
-      addSkill();
-      Object.entries(formData).forEach(([field, value]) => {
-        updateSkill(skills.length, field, value);
-      });
+      newSkills.push(formattedData);
     }
+    updateData('skills', newSkills);
     setEditIndex(null);
     setFormData({
       name: '',
-      level: '',
-      yearsOfExperience: ''
+      level: 'Beginner',
+      yearsOfExperience: 0
     });
   };
 
   const tableHeaders = ['Skill', 'Level', 'Years of Experience'];
-  const tableRows = skills.map(skill => [
+  const tableRows = data.map(skill => [
     skill.name,
     <Badge key={`${skill.name}-level`} variant="secondary" className={
       skillLevels.find(l => l.value === skill.level)?.color
     }>
       {skill.level}
     </Badge>,
-    `${skill.yearsOfExperience} year${skill.yearsOfExperience !== 1 ? 's' : ''}`
+    `${skill.yearsOfExperience} years`
   ]);
 
   return (
@@ -81,12 +98,12 @@ const SkillsForm = ({ skills, addSkill, removeSkill, updateSkill }) => {
         <CardTitle className="text-2xl font-bold text-gray-900">Skills</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {skills.length > 0 ? (
+        {data.length > 0 ? (
           <TableView
             headers={tableHeaders}
             rows={tableRows}
             onEdit={handleEdit}
-            onDelete={removeSkill}
+            onDelete={handleDelete}
           />
         ) : (
           <div className="text-center py-12 bg-gray-50 rounded-lg">
@@ -97,7 +114,7 @@ const SkillsForm = ({ skills, addSkill, removeSkill, updateSkill }) => {
         <FormDialog
           trigger={
             <Button className="w-full" size="lg">
-              {skills.length === 0 ? 'Add Skill' : 'Add Another Skill'}
+              {data.length === 0 ? 'Add Skill' : 'Add Another Skill'}
             </Button>
           }
           title={editIndex !== null ? 'Edit Skill' : 'Add New Skill'}
@@ -105,8 +122,8 @@ const SkillsForm = ({ skills, addSkill, removeSkill, updateSkill }) => {
             setEditIndex(null);
             setFormData({
               name: '',
-              level: '',
-              yearsOfExperience: ''
+              level: 'Beginner',
+              yearsOfExperience: 0
             });
           }}
           onSubmit={handleSubmit}
@@ -150,7 +167,7 @@ const SkillsForm = ({ skills, addSkill, removeSkill, updateSkill }) => {
               label="Years of Experience"
               required
               value={formData.yearsOfExperience}
-              onChange={(e) => setFormData({ ...formData, yearsOfExperience: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, yearsOfExperience: Number(e.target.value )})}
               min="0"
               step="0.5"
               placeholder="Enter years of experience"

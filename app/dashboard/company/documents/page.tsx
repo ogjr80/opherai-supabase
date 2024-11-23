@@ -16,6 +16,7 @@ import {
   Eye,
   Share2
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface CompanyDocument {
   id: string;
@@ -69,86 +70,118 @@ const companyDocuments: CompanyDocument[] = [
   }
 ];
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 24
+    }
+  }
+};
+
 export default function CompanyDocuments() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<string | null>(null);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Company Documents</h1>
-        <Button>
-          <Upload className="w-4 h-4 mr-2" />
-          Upload Document
-        </Button>
-      </div>
+    <motion.div 
+      className="space-y-8 p-8"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
+      <motion.div variants={itemVariants}>
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Company Documents</h1>
+          <Button>
+            <Upload className="w-4 h-4 mr-2" />
+            Upload Document
+          </Button>
+        </div>
+      </motion.div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
-            <div className="flex-1 max-w-2xl">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search documents..."
-                  className="pl-10 pr-4"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+      <motion.div variants={containerVariants}>
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
+              <div className="flex-1 max-w-2xl">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="Search documents..."
+                    className="pl-10 pr-4"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <Button variant="outline">
+                  <Filter className="w-4 h-4 mr-2" />
+                  Filters
+                </Button>
+                <Button variant="outline">
+                  <Folder className="w-4 h-4 mr-2" />
+                  New Folder
+                </Button>
               </div>
             </div>
-            <div className="flex space-x-2">
-              <Button variant="outline">
-                <Filter className="w-4 h-4 mr-2" />
-                Filters
-              </Button>
-              <Button variant="outline">
-                <Folder className="w-4 h-4 mr-2" />
-                New Folder
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[600px]">
-            <div className="space-y-4">
-              {companyDocuments.map((doc) => (
-                <div
-                  key={doc.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
-                >
-                  <div className="flex items-center space-x-4">
-                    <FileText className="h-8 w-8 text-blue-500" />
-                    <div>
-                      <h3 className="font-medium">{doc.name}</h3>
-                      <div className="flex items-center space-x-2 text-sm text-gray-500">
-                        <span>{doc.size}</span>
-                        <span>•</span>
-                        <span>Last modified: {doc.lastModified}</span>
-                        <Badge variant="secondary">{doc.department}</Badge>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[600px]">
+              <div className="space-y-4">
+                {companyDocuments.map((doc) => (
+                  <div
+                    key={doc.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <FileText className="h-8 w-8 text-blue-500" />
+                      <div>
+                        <h3 className="font-medium">{doc.name}</h3>
+                        <div className="flex items-center space-x-2 text-sm text-gray-500">
+                          <span>{doc.size}</span>
+                          <span>•</span>
+                          <span>Last modified: {doc.lastModified}</span>
+                          <Badge variant="secondary">{doc.department}</Badge>
+                        </div>
                       </div>
                     </div>
+                    <div className="flex items-center space-x-2">
+                      <Button variant="ghost" size="sm">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Share2 className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Download className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Button variant="ghost" size="sm">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      <Share2 className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      <Download className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
-    </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </motion.div>
   );
 }

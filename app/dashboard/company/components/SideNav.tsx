@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { motion } from 'framer-motion';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard/company', icon: LayoutDashboard },
@@ -25,30 +26,64 @@ const navigation = [
   { name: 'Settings', href: '/dashboard/company/settings', icon: Settings },
 ];
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, x: -20 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 24
+    }
+  }
+};
+
 export default function CompanySideNav() {
   const pathname = usePathname();
 
   return (
-    <div className="w-64 border-r bg-white h-screen fixed left-0 top-16">
+    <motion.div 
+      className="w-64 border-r bg-white h-screen fixed left-0 top-16"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
       <nav className="flex flex-col p-4 space-y-1">
         {navigation.map((item) => {
           const isActive = pathname === item.href;
           return (
-            <Link
+            <motion.div
               key={item.name}
-              href={item.href}
-              className={`flex items-center space-x-3 rounded-lg px-3 py-2 transition-colors ${
-                isActive 
-                  ? 'bg-blue-50 text-blue-600' 
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
+              variants={itemVariants}
+              whileHover={{ x: 5 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <item.icon className="h-5 w-5" />
-              <span>{item.name}</span>
-            </Link>
+              <Link
+                href={item.href}
+                className={`flex items-center space-x-3 rounded-lg px-3 py-2 transition-colors ${
+                  isActive 
+                    ? 'bg-blue-50 text-blue-600' 
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <item.icon className="h-5 w-5" />
+                <span>{item.name}</span>
+              </Link>
+            </motion.div>
           );
         })}
       </nav>
-    </div>
+    </motion.div>
   );
 }

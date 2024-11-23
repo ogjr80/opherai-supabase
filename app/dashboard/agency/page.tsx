@@ -12,10 +12,14 @@ import {
   Search,
   Filter,
   DollarSign,
-  Target
+  Target,
+  LogOut
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { createClient } from '@/utils/supabase/client';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 const stats = [
   { label: 'Active Clients', value: '24', icon: Building2, trend: '+3 this month' },
@@ -67,6 +71,24 @@ const itemVariants = {
 };
 
 export default function AgencyDashboard() {
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+
+      localStorage.removeItem('supabase.auth.token');
+      
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Error logging out:', error);
+      toast.error('Failed to log out');
+    }
+  };
+
   return (
     <motion.div 
       className="space-y-8 p-8"
@@ -80,13 +102,21 @@ export default function AgencyDashboard() {
           <h1 className="text-3xl font-bold">Agency Dashboard</h1>
           <p className="text-gray-500">Manage your clients, candidates, and placements</p>
         </div>
-        <div className="space-x-4">
+        <div className="space-x-4 flex items-center">
           <Link href="/dashboard/agency/clients/add">
             <Button className="space-x-2">
               <Building2 className="w-4 h-4" />
               <span>Add New Client</span>
             </Button>
           </Link>
+          <Button 
+            variant="outline" 
+            onClick={handleLogout}
+            className="space-x-2"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Logout</span>
+          </Button>
         </div>
       </motion.div>
 

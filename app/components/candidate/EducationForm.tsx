@@ -13,16 +13,10 @@ interface Education {
   }
   
   interface EducationFormProps {
-    education: Education[];
-    addEducation: () => void;
-    removeEducation: (index: number) => void;
-    updateEducation: (index: number, field: string, value: string) => void;
+    data: Education[];
+    updateData: (field: string, value: Education[]) => void;
   }
-const EducationForm = ({ 
-    education, 
-    addEducation, 
-    removeEducation, 
-    updateEducation }: EducationFormProps) => {
+const EducationForm = ({ data, updateData }: EducationFormProps) => {
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [formData, setFormData] = useState<Education>({
     institution: '',
@@ -35,20 +29,17 @@ const EducationForm = ({
   
   const handleEdit = (index: number) => {
     setEditIndex(index);
-    setFormData(education[index]);
+    setFormData(data[index]);
   };
 
   const handleSubmit = () => {
+    const newEducation = [...data];
     if (editIndex !== null) {
-      Object.entries(formData).forEach(([field, value]) => {
-        updateEducation(editIndex, field, value);
-      });
+      newEducation[editIndex] = formData;
     } else {
-      addEducation();
-      Object.entries(formData).forEach(([field, value]) => {
-        updateEducation(education.length, field, value);
-      });
+      newEducation.push(formData);
     }
+    updateData('education', newEducation);
     setEditIndex(null);
     setFormData({
       institution: '',
@@ -60,8 +51,13 @@ const EducationForm = ({
     });
   };
 
+  const handleDelete = (index: number) => {
+    const newEducation = data.filter((_, i) => i !== index);
+    updateData('education', newEducation);
+  };
+
   const tableHeaders = ['Institution', 'Degree', 'Field of Study', 'Duration', 'Grade'];
-  const tableRows = education.map(edu => [
+  const tableRows = data.map(edu => [
     edu.institution,
     edu.degree,
     edu.fieldOfStudy,
@@ -75,12 +71,12 @@ const EducationForm = ({
         <CardTitle className="text-2xl font-bold text-gray-900">Education History</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {education.length > 0 ? (
+        {data.length > 0 ? (
           <TableView
             headers={tableHeaders}
             rows={tableRows}
             onEdit={handleEdit}
-            onDelete={removeEducation}
+            onDelete={handleDelete}
           />
         ) : (
           <div className="text-center py-12 bg-gray-50 rounded-lg">
@@ -91,7 +87,7 @@ const EducationForm = ({
         <FormDialog
           trigger={
             <Button className="w-full" size="lg">
-              {education.length === 0 ? 'Add Education' : 'Add Another Education'}
+              {data.length === 0 ? 'Add Education' : 'Add Another Education'}
             </Button>
           }
           title={editIndex !== null ? 'Edit Education' : 'Add New Education'}

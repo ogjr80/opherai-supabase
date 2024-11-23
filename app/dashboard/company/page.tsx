@@ -2,7 +2,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-// import { CandidateService } from '@/utils/supabase/candidateService';
 import {
   Building,
   Users,
@@ -14,6 +13,7 @@ import {
   Filter
 } from 'lucide-react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 
 const stats = [
   { label: 'Active Job Postings', value: '12', icon: Briefcase, trend: '+2 this week' },
@@ -37,14 +37,41 @@ const recentApplications = [
     match: 88,
     applied: '3 days ago'
   },
-  // Add more applications as needed
 ];
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 24
+    }
+  }
+};
 
 export default function CompanyDashboard() {
   return (
-    <div className="space-y-8 p-8">
+    <motion.div 
+      className="space-y-8 p-8"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
       {/* Header Section */}
-      <div className="flex justify-between items-center">
+      <motion.div variants={itemVariants} className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Company Dashboard</h1>
           <p className="text-gray-500">Manage your recruitment pipeline and team</p>
@@ -57,62 +84,72 @@ export default function CompanyDashboard() {
             </Button>
           </Link>
         </div>
-      </div>
+      </motion.div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <motion.div 
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+        variants={containerVariants}
+      >
         {stats.map((stat, index) => (
-          <Card key={index}>
-            <CardContent className="flex items-center p-6">
-              <div className="p-2 rounded-lg bg-blue-50 mr-4">
-                <stat.icon className="w-8 h-8 text-blue-500" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">{stat.label}</p>
-                <p className="text-2xl font-bold">{stat.value}</p>
-                <p className="text-sm text-green-600">{stat.trend}</p>
-              </div>
-            </CardContent>
-          </Card>
+          <motion.div key={index} variants={itemVariants}>
+            <Card>
+              <CardContent className="flex items-center p-6">
+                <div className="p-2 rounded-lg bg-blue-50 mr-4">
+                  <stat.icon className="w-8 h-8 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">{stat.label}</p>
+                  <p className="text-2xl font-bold">{stat.value}</p>
+                  <p className="text-sm text-green-600">{stat.trend}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       {/* Recent Applications */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Recent Applications</CardTitle>
-          <div className="flex space-x-2">
-            <Button variant="outline" size="sm">
-              <Filter className="w-4 h-4 mr-2" />
-              Filter
-            </Button>
-            <Button variant="outline" size="sm">
-              <Search className="w-4 h-4 mr-2" />
-              Search
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {recentApplications.map((application, index) => (
-              <div key={index} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                <div>
-                  <h3 className="font-medium">{application.position}</h3>
-                  <p className="text-sm text-gray-500">{application.applicant}</p>
+      <motion.div variants={itemVariants}>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Recent Applications</CardTitle>
+            <div className="flex space-x-2">
+              <Button variant="outline" size="sm">
+                <Filter className="w-4 h-4 mr-2" />
+                Filter
+              </Button>
+              <Button variant="outline" size="sm">
+                <Search className="w-4 h-4 mr-2" />
+                Search
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {recentApplications.map((application, index) => (
+                <div key={index} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                  <div>
+                    <h3 className="font-medium">{application.position}</h3>
+                    <p className="text-sm text-gray-500">{application.applicant}</p>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <Badge variant="outline">{application.status}</Badge>
+                    <Badge variant="success">{application.match}% Match</Badge>
+                    <span className="text-sm text-gray-500">{application.applied}</span>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-4">
-                  <Badge variant="outline">{application.status}</Badge>
-                  <Badge variant="success">{application.match}% Match</Badge>
-                  <span className="text-sm text-gray-500">{application.applied}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <motion.div 
+        className="grid grid-cols-1 md:grid-cols-3 gap-4"
+        variants={containerVariants}
+      >
         <Card>
           <CardHeader>
             <CardTitle>Hiring Pipeline</CardTitle>
@@ -142,7 +179,6 @@ export default function CompanyDashboard() {
           <CardContent>
             <div className="space-y-2">
               <p className="text-sm text-gray-500">Recent team member actions...</p>
-              {/* Add team activity feed here */}
             </div>
           </CardContent>
         </Card>
@@ -159,7 +195,7 @@ export default function CompanyDashboard() {
             </div>
           </CardContent>
         </Card>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

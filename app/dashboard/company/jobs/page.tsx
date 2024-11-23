@@ -11,6 +11,7 @@ import {
   ArrowUpDown, Filter 
 } from 'lucide-react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 
 const jobStatuses = [
   { value: 'all', label: 'All Jobs' },
@@ -20,87 +21,103 @@ const jobStatuses = [
   { value: 'paused', label: 'Paused' }
 ];
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 24
+    }
+  }
+};
+
 export default function JobsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentStatus, setCurrentStatus] = useState('all');
 
   return (
-    <div className="space-y-6">
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <motion.div 
+      className="space-y-8 p-8"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
+      {/* Header Section */}
+      <motion.div variants={itemVariants} className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Job Postings</h1>
+          <p className="text-gray-500">Manage and track your job listings</p>
+        </div>
+        <Link href="/dashboard/company/jobs/create">
+          <Button className="space-x-2">
+            <Plus className="w-4 h-4" />
+            <span>Post New Job</span>
+          </Button>
+        </Link>
+      </motion.div>
+
+      <motion.div variants={itemVariants}>
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Active Jobs</p>
-                <p className="text-2xl font-bold">24</p>
+          <CardHeader>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
+              <div className="flex-1 max-w-2xl">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="Search jobs by title, skills, or location..."
+                    className="pl-10 pr-4"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
               </div>
-              <Briefcase className="h-8 w-8 text-blue-500" />
+              <div className="flex space-x-2">
+                <Button variant="outline">
+                  <Filter className="w-4 h-4 mr-2" />
+                  Filters
+                </Button>
+              </div>
             </div>
-          </CardContent>
+          </CardHeader>
+
+          <motion.div variants={containerVariants}>
+            <Tabs defaultValue="all" className="p-6">
+              <TabsList className="mb-4">
+                {jobStatuses.map((status) => (
+                  <TabsTrigger
+                    key={status.value}
+                    value={status.value}
+                    onClick={() => setCurrentStatus(status.value)}
+                  >
+                    {status.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+
+              <TabsContent value="all" className="space-y-4">
+                {/* Job Cards */}
+                <motion.div variants={itemVariants} className="space-y-4">
+                  <JobCard />
+                </motion.div>
+              </TabsContent>
+            </Tabs>
+          </motion.div>
         </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Total Applicants</p>
-                <p className="text-2xl font-bold">1,234</p>
-              </div>
-              <Users className="h-8 w-8 text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
-        {/* Add more stat cards as needed */}
-      </div>
-
-      {/* Main Content */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
-            <div className="flex-1 max-w-2xl">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search jobs by title, skills, or location..."
-                  className="pl-10 pr-4"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="flex space-x-2">
-              <Button variant="outline">
-                <Filter className="w-4 h-4 mr-2" />
-                Filters
-              </Button>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Post New Job
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-
-        <Tabs defaultValue="all" className="p-6">
-          <TabsList className="mb-4">
-            {jobStatuses.map((status) => (
-              <TabsTrigger
-                key={status.value}
-                value={status.value}
-                onClick={() => setCurrentStatus(status.value)}
-              >
-                {status.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          <TabsContent value="all" className="space-y-4">
-            {/* Job Cards will be mapped here */}
-            <JobCard />
-          </TabsContent>
-        </Tabs>
-      </Card>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
